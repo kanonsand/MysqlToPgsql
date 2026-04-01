@@ -1,5 +1,10 @@
+package converter;
+
 import java.util.List;
 
+/**
+ * Holder class for parsed SQL statements
+ */
 public class SqlHolder {
     private List<String> dropList;
     private List<String> createList;
