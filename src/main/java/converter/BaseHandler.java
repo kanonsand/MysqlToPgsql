@@ -1,9 +1,7 @@
 package converter;
 
 import com.alibaba.druid.sql.ast.SQLStatement;
-import org.apache.commons.dbutils.QueryRunner;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,17 +28,6 @@ public abstract class BaseHandler<T extends SQLStatement> implements StatementHa
         return Collections.singletonList(doConvert(statement));
     }
 
-    @Override
-    public int execute(QueryRunner queryRunner, T statement) throws SQLException {
-        List<String> convertedSqls = convert(statement);
-        int totalAffected = 0;
-        for (String sql : convertedSqls) {
-            logStatement(sql);
-            totalAffected += doExecute(queryRunner, statement, sql);
-        }
-        return totalAffected;
-    }
-
     /**
      * Get the class of the statement this handler processes
      * @return the statement class
@@ -53,25 +40,6 @@ public abstract class BaseHandler<T extends SQLStatement> implements StatementHa
      * @return the converted SQL string
      */
     protected abstract String doConvert(T statement);
-
-    /**
-     * Execute the statement against the database
-     * @param queryRunner the database query runner
-     * @param statement the original statement
-     * @param sql the converted SQL
-     * @return number of rows affected
-     */
-    protected int doExecute(QueryRunner queryRunner, T statement, String sql) throws SQLException {
-        return queryRunner.execute(sql);
-    }
-
-    /**
-     * Log the statement being executed
-     * @param sql the SQL to log
-     */
-    protected void logStatement(String sql) {
-        System.out.println(getStatementTypeName() + " statement: " + sql);
-    }
 
     /**
      * Convert MySQL backticks to PostgreSQL double quotes (legacy method)

@@ -2,9 +2,7 @@ package converter;
 
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlDeleteStatement;
-import org.apache.commons.dbutils.QueryRunner;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -64,12 +62,5 @@ public class DeleteHandler extends BaseHandler<MySqlDeleteStatement> {
     @Override
     public List<String> convert(MySqlDeleteStatement statement) {
         return Collections.singletonList(doConvert(statement));
-    }
-
-    @Override
-    public int execute(QueryRunner queryRunner, MySqlDeleteStatement statement) throws SQLException {
-        String sql = doConvert(statement);
-        logStatement(sql);
-        return queryRunner.execute(sql);
     }
 }

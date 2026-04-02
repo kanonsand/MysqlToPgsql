@@ -6,9 +6,7 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlCreateTableStateme
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlTableIndex;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Handler for CREATE TABLE statements
@@ -64,24 +62,5 @@ public class CreateTableHandler extends BaseHandler<MySqlCreateTableStatement> {
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert CREATE TABLE statement", e);
         }
-    }
-
-    @Override
-    protected int doExecute(org.apache.commons.dbutils.QueryRunner queryRunner,
-                           MySqlCreateTableStatement statement, String sql) throws SQLException {
-        // For CREATE TABLE, we execute each converted SQL
-        return queryRunner.execute(sql);
-    }
-
-    @Override
-    public int execute(org.apache.commons.dbutils.QueryRunner queryRunner,
-                      MySqlCreateTableStatement statement) throws SQLException {
-        List<String> convertedSqls = convert(statement);
-        int totalAffected = 0;
-        for (String sql : convertedSqls) {
-            logStatement(sql);
-            totalAffected += queryRunner.execute(sql);
-        }
-        return totalAffected;
     }
 }

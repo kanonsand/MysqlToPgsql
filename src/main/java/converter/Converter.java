@@ -4,6 +4,11 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.statement.SQLDropTableStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlCreateTableStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlDeleteStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlInsertStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
 import org.apache.commons.dbutils.QueryRunner;
 
 import javax.sql.DataSource;
@@ -32,10 +37,10 @@ import java.util.Properties;
 public class Converter {
 
     private final List<StatementHandler<?>> handlers;
-    private final QueryRunner queryRunner;
+    private final SqlExecutor sqlExecutor;
 
     public Converter(DataSource dataSource) {
-        this.queryRunner = new QueryRunner(dataSource);
+        this.sqlExecutor = new SqlExecutor(new QueryRunner(dataSource));
         this.handlers = new ArrayList<>();
         // Register handlers in execution order
         registerHandler(new DropTableHandler());
@@ -67,7 +72,6 @@ public class Converter {
     /**
      * Categorize statements by type for each handler
      * @param statements all parsed statements
-     * @return map of handler to list of statements
      */
     @SuppressWarnings("unchecked")
     public void processStatements(List<SQLStatement> statements) {
@@ -103,9 +107,36 @@ public class Converter {
      * Execute a handler for a specific statement
      */
     @SuppressWarnings("unchecked")
-    private <T extends SQLStatement> void executeHandler(StatementHandler<T> handler, SQLStatement statement) throws SQLException {
-        T typedStatement = (T) statement;
-        handler.execute(queryRunner, typedStatement);
+    private void executeHandler(StatementHandler<?> handler, SQLStatement statement) throws SQLException {
+        String typeName = handler.getStatementTypeName();
+        
+        if (statement instanceof SQLDropTableStatement) {
+            List<String> sqls = ((StatementHandler<SQLDropTableStatement>) handler).convert((SQLDropTableStatement) statement);
+            for (String sql : sqls) {
+                sqlExecutor.log(typeName, sql);
+                sqlExecutor.execute(sql);
+            }
+        } else if (statement instanceof MySqlCreateTableStatement) {
+            List<String> sqls = ((StatementHandler<MySqlCreateTableStatement>) handler).convert((MySqlCreateTableStatement) statement);
+            for (String sql : sqls) {
+                sqlExecutor.log(typeName, sql);
+                sqlExecutor.execute(sql);
+            }
+        } else if (statement instanceof MySqlInsertStatement) {
+            sqlExecutor.executeInsert((MySqlInsertStatement) statement);
+        } else if (statement instanceof MySqlUpdateStatement) {
+            List<String> sqls = ((StatementHandler<MySqlUpdateStatement>) handler).convert((MySqlUpdateStatement) statement);
+            for (String sql : sqls) {
+                sqlExecutor.log(typeName, sql);
+                sqlExecutor.execute(sql);
+            }
+        } else if (statement instanceof MySqlDeleteStatement) {
+            List<String> sqls = ((StatementHandler<MySqlDeleteStatement>) handler).convert((MySqlDeleteStatement) statement);
+            for (String sql : sqls) {
+                sqlExecutor.log(typeName, sql);
+                sqlExecutor.execute(sql);
+            }
+        }
     }
 
     /**

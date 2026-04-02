@@ -1,15 +1,11 @@
 package converter;
 
 import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.SQLStatement;
-import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.expr.SQLValuableExpr;
 import com.alibaba.druid.sql.ast.statement.SQLUpdateSetItem;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
 import com.alibaba.druid.sql.visitor.SQLEvalVisitor;
-import org.apache.commons.dbutils.QueryRunner;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,7 +68,7 @@ public class UpdateHandler extends BaseHandler<MySqlUpdateStatement> {
     /**
      * Extract values from the UPDATE statement for parameterized execution
      */
-    private List<Object> extractValues(MySqlUpdateStatement statement) {
+    public List<Object> extractValues(MySqlUpdateStatement statement) {
         List<Object> values = new ArrayList<>();
         for (SQLUpdateSetItem item : statement.getItems()) {
             if (item.getValue() instanceof SQLValuableExpr) {
@@ -90,18 +86,5 @@ public class UpdateHandler extends BaseHandler<MySqlUpdateStatement> {
     @Override
     public List<String> convert(MySqlUpdateStatement statement) {
         return Collections.singletonList(doConvert(statement));
-    }
-
-    @Override
-    public int execute(QueryRunner queryRunner, MySqlUpdateStatement statement) throws SQLException {
-        String sql = doConvert(statement);
-        List<Object> values = extractValues(statement);
-
-        logStatement(sql);
-
-        if (!values.isEmpty()) {
-            return queryRunner.execute(sql, values.toArray());
-        }
-        return queryRunner.execute(sql);
     }
 }

@@ -198,6 +198,127 @@ public class TableMapping {
         this.columnNameMapping.put(mysqlName, pgName);
     }
     
+    /**
+     * Get parameter position mapping for INSERT without column names.
+     * Returns an array where index is MySQL position, value is PostgreSQL position (0-based).
+     * 
+     * Example: MySQL columns [id, name, age], PostgreSQL columns [id, age, name]
+     * Result: [0, 2, 1] means MySQL[0]->PG[0], MySQL[1]->PG[2], MySQL[2]->PG[1]
+     */
+    public int[] getParameterMapping() {
+        if (mysqlColumns.isEmpty() || pgColumns.isEmpty()) {
+            return new int[0];
+        }
+        
+        int[] mapping = new int[mysqlColumns.size()];
+        for (int i = 0; i < mysqlColumns.size(); i++) {
+            String mysqlColName = mysqlColumns.get(i).getName();
+            String pgColName = getPostgresColumnName(mysqlColName);
+            mapping[i] = getPostgresColumnOrdinal(pgColName);
+        }
+        return mapping;
+    }
+    
+    /**
+     * Get parameter position mapping for INSERT/UPDATE with specified column names.
+     * 
+     * @param mysqlColumnNames MySQL column names in order
+     * @return mapping array where index is MySQL position, value is PostgreSQL position (0-based)
+     */
+    public int[] getParameterMappingWithColumns(List<String> mysqlColumnNames) {
+        if (mysqlColumnNames == null || mysqlColumnNames.isEmpty()) {
+            return getParameterMapping();
+        }
+        
+        int[] mapping = new int[mysqlColumnNames.size()];
+        for (int i = 0; i < mysqlColumnNames.size(); i++) {
+            String mysqlColName = mysqlColumnNames.get(i);
+            String pgColName = getPostgresColumnName(mysqlColName);
+            mapping[i] = getPostgresColumnOrdinal(pgColName);
+        }
+        return mapping;
+    }
+    
+    /**
+     * Check if parameter remapping is needed.
+     * Returns true if MySQL and PostgreSQL column orders are different.
+     */
+    public boolean needsParameterRemapping() {
+        int[] mapping = getParameterMapping();
+        for (int i = 0; i < mapping.length; i++) {
+            if (mapping[i] != i) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Get parameter type categories based on PostgreSQL column types.
+     * 
+     * @param mysqlColumnNames MySQL column names in order
+     * @return array of TypeCategory for each parameter
+     */
+    public SqlTypeMapper.TypeCategory[] getParameterTypeCategories(List<String> mysqlColumnNames) {
+        List<String> columns = mysqlColumnNames != null && !mysqlColumnNames.isEmpty() 
+                ? mysqlColumnNames 
+                : mysqlColumns.stream().map(ColumnDefinition::getName).collect(Collectors.toList());
+        
+        SqlTypeMapper.TypeCategory[] categories = new SqlTypeMapper.TypeCategory[columns.size()];
+        for (int i = 0; i < columns.size(); i++) {
+            String mysqlColName = columns.get(i);
+            String pgColName = getPostgresColumnName(mysqlColName);
+            ColumnDefinition pgCol = getPgColumnMap().get(pgColName.toLowerCase());
+            if (pgCol != null) {
+                categories[i] = SqlTypeMapper.getCategory(pgCol.getType());
+            } else {
+                categories[i] = SqlTypeMapper.TypeCategory.OTHER;
+            }
+        }
+        return categories;
+    }
+    
+    /**
+     * Check if SELECT column needs alias (column name different between MySQL and PostgreSQL).
+     * 
+     * @param mysqlColumnName MySQL column name
+     * @return true if alias is needed
+     */
+    public boolean needsAlias(String mysqlColumnName) {
+        String pgColName = columnNameMapping.get(mysqlColumnName);
+        return pgColName != null && !pgColName.equals(mysqlColumnName);
+    }
+    
+    /**
+     * Get all MySQL column names.
+     */
+    public List<String> getMySqlColumnNames() {
+        return mysqlColumns.stream()
+                .map(ColumnDefinition::getName)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get all PostgreSQL column names.
+     */
+    public List<String> getPostgresColumnNames() {
+        return pgColumns.stream()
+                .map(ColumnDefinition::getName)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get PostgreSQL column type.
+     * 
+     * @param mysqlColumnName MySQL column name
+     * @return PostgreSQL column type, null if not found
+     */
+    public String getPostgresColumnType(String mysqlColumnName) {
+        String pgColName = getPostgresColumnName(mysqlColumnName);
+        ColumnDefinition pgCol = getPgColumnMap().get(pgColName.toLowerCase());
+        return pgCol != null ? pgCol.getType() : null;
+    }
+    
     @Override
     public String toString() {
         return "TableMapping{" +

@@ -1,9 +1,7 @@
 package converter;
 
 import com.alibaba.druid.sql.ast.SQLStatement;
-import org.apache.commons.dbutils.QueryRunner;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -32,14 +30,6 @@ public interface StatementHandler<T extends SQLStatement> {
      * @return the converted PostgreSQL SQL string(s)
      */
     List<String> convert(T statement);
-
-    /**
-     * Execute the converted statement against the database
-     * @param queryRunner the database query runner
-     * @param statement the converted statement
-     * @return number of rows affected
-     */
-    int execute(QueryRunner queryRunner, T statement) throws SQLException;
 
     /**
      * Get the statement type name for logging

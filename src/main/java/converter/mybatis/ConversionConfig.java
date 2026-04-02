@@ -1,6 +1,8 @@
 package converter.mybatis;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -18,6 +20,7 @@ public class ConversionConfig {
     private boolean selectEnabled = true;
     private boolean cacheEnabled = true;
     private int cacheMaxSize = 1000;
+    private List<FunctionConverter> functionConverters = new ArrayList<>();
     
     public boolean isEnabled() {
         return enabled;
@@ -113,5 +116,33 @@ public class ConversionConfig {
     
     public boolean isSqlIdExcluded(String sqlId) {
         return sqlId != null && excludedSqlIds.contains(sqlId);
+    }
+    
+    public List<FunctionConverter> getFunctionConverters() {
+        return functionConverters;
+    }
+    
+    public void setFunctionConverters(List<FunctionConverter> functionConverters) {
+        this.functionConverters = functionConverters != null ? functionConverters : new ArrayList<>();
+    }
+    
+    public void addFunctionConverter(FunctionConverter converter) {
+        this.functionConverters.add(converter);
+    }
+    
+    /**
+     * Convert function using registered converters
+     * @param functionName function name (uppercase)
+     * @param args function arguments string
+     * @return converted expression, null if no converter handles it
+     */
+    public String convertFunction(String functionName, String args) {
+        for (FunctionConverter converter : functionConverters) {
+            String result = converter.convert(functionName, args);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 }
