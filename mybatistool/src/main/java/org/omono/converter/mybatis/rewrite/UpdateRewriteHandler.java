@@ -2,6 +2,7 @@ package org.omono.converter.mybatis.rewrite;
 
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.ClauseContext;
@@ -50,7 +51,8 @@ public class UpdateRewriteHandler extends SqlRewriteHandler {
     
     @Override
     public void convert(SQLStatement stmt, SqlAnalysisResult analysis, 
-                        TableMapping mapping, ConversionContext context) {
+                        TableMapping mapping, ConversionContext context,
+                        ConversionConfig config) {
         if (!(stmt instanceof MySqlUpdateStatement)) {
             return;
         }
@@ -58,7 +60,7 @@ public class UpdateRewriteHandler extends SqlRewriteHandler {
         MySqlUpdateStatement update = (MySqlUpdateStatement) stmt;
         
         // Create context with all shared state
-        ClauseContext ctx = new ClauseContext(mapping, analysis);
+        ClauseContext ctx = new ClauseContext(mapping, config, analysis);
         
         // 1. Process FROM clause (table source)
         new FromClauseHandler().process(update.getTableSource(), ctx);

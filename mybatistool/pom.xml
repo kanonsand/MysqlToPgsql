@@ -29,18 +29,6 @@
             <artifactId>druid</artifactId>
         </dependency>
         
-        <!-- JSqlParser -->
-        <dependency>
-            <groupId>com.github.jsqlparser</groupId>
-            <artifactId>jsqlparser</artifactId>
-        </dependency>
-        
-        <!-- Apache Commons -->
-        <dependency>
-            <groupId>commons-dbutils</groupId>
-            <artifactId>commons-dbutils</artifactId>
-            <version>1.7</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
@@ -61,13 +49,7 @@
             <version>1.7.36</version>
         </dependency>
         
-        <!-- PostgreSQL Driver (provided) -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        
+
         <!-- Test -->
         <dependency>
             <groupId>junit</groupId>

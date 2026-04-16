@@ -5,6 +5,7 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.statement.SQLInsertStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlInsertStatement;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.ClauseContext;
@@ -56,7 +57,8 @@ public class InsertRewriteHandler extends SqlRewriteHandler {
     
     @Override
     public void convert(SQLStatement stmt, SqlAnalysisResult analysis, 
-                        TableMapping mapping, ConversionContext context) {
+                        TableMapping mapping, ConversionContext context,
+                        ConversionConfig config) {
         if (!(stmt instanceof MySqlInsertStatement)) {
             return;
         }
@@ -64,7 +66,7 @@ public class InsertRewriteHandler extends SqlRewriteHandler {
         MySqlInsertStatement insert = (MySqlInsertStatement) stmt;
         
         // Create context with converters
-        ClauseContext ctx = new ClauseContext(mapping, analysis);
+        ClauseContext ctx = new ClauseContext(mapping, config, analysis);
         
         // Add column names if missing
         if (analysis.isHasValuesWithoutColumns() && mapping != null) {

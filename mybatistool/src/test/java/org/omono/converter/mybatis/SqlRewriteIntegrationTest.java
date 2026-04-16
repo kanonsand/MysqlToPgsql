@@ -457,7 +457,8 @@ public class SqlRewriteIntegrationTest {
         
         SqlAnalysisResult analysis = handler.analyze(stmt);
         ConversionContext context = new ConversionContext();
-        handler.convert(stmt, analysis, mapping, context);
+        ConversionConfig config = ConversionConfig.mysqlToPostgres();
+        handler.convert(stmt, analysis, mapping, context, config);
         
         return stmt.toString();
     }
@@ -471,7 +472,8 @@ public class SqlRewriteIntegrationTest {
         
         SqlAnalysisResult analysis = handler.analyze(stmt);
         ConversionContext context = new ConversionContext();
-        handler.convertMulti(stmt, analysis, mappings, context);
+        ConversionConfig config = ConversionConfig.mysqlToPostgres();
+        handler.convertMulti(stmt, analysis, mappings, context, config);
         
         return stmt.toString();
     }
@@ -485,7 +487,8 @@ public class SqlRewriteIntegrationTest {
         
         SqlAnalysisResult analysis = handler.analyze(stmt);
         ConversionContext context = new ConversionContext();
-        handler.convert(stmt, analysis, mapping, context);
+        ConversionConfig config = ConversionConfig.mysqlToPostgres();
+        handler.convert(stmt, analysis, mapping, context, config);
         
         return stmt.toString();
     }
@@ -499,7 +502,8 @@ public class SqlRewriteIntegrationTest {
         
         SqlAnalysisResult analysis = handler.analyze(stmt);
         ConversionContext context = new ConversionContext();
-        handler.convert(stmt, analysis, mapping, context);
+        ConversionConfig config = ConversionConfig.mysqlToPostgres();
+        handler.convert(stmt, analysis, mapping, context, config);
         
         return stmt.toString();
     }
@@ -513,7 +517,8 @@ public class SqlRewriteIntegrationTest {
         
         SqlAnalysisResult analysis = handler.analyze(stmt);
         ConversionContext context = new ConversionContext();
-        handler.convert(stmt, analysis, mapping, context);
+        ConversionConfig config = ConversionConfig.mysqlToPostgres();
+        handler.convert(stmt, analysis, mapping, context, config);
         
         return stmt.toString();
     }

@@ -4,8 +4,6 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import org.omono.converter.comparator.context.CompareContext;
-import converter.comparator.stmt.*;
-import org.omono.comparator.stmt.*;
 import org.omono.converter.comparator.stmt.*;
 
 import java.util.Arrays;

@@ -6,6 +6,7 @@ import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.ast.statement.SQLTableSource;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.ClauseContext;
@@ -53,14 +54,16 @@ public abstract class SqlRewriteHandler {
     }
     
     /**
-     * Convert the SQL statement for PostgreSQL
+     * Convert the SQL statement for the target database.
      * @param stmt the SQL statement to convert
      * @param analysis the analysis result
      * @param mapping the table mapping (may be null)
      * @param context the conversion context
+     * @param config the conversion configuration
      */
     public abstract void convert(SQLStatement stmt, SqlAnalysisResult analysis, 
-                                  TableMapping mapping, ConversionContext context);
+                                  TableMapping mapping, ConversionContext context,
+                                  ConversionConfig config);
     
     /**
      * Check if this handler supports the given statement

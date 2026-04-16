@@ -2,6 +2,7 @@ package org.omono.converter.mybatis.rewrite;
 
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.*;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.*;
@@ -55,7 +56,8 @@ public class SelectRewriteHandler extends SqlRewriteHandler {
     
     @Override
     public void convert(SQLStatement stmt, SqlAnalysisResult analysis, 
-                        TableMapping mapping, ConversionContext context) {
+                        TableMapping mapping, ConversionContext context,
+                        ConversionConfig config) {
         if (!(stmt instanceof SQLSelectStatement)) {
             return;
         }
@@ -64,7 +66,7 @@ public class SelectRewriteHandler extends SqlRewriteHandler {
         SQLSelectQuery query = select.getSelect().getQuery();
         
         if (query instanceof SQLSelectQueryBlock) {
-            ClauseContext ctx = new ClauseContext(mapping, analysis);
+            ClauseContext ctx = new ClauseContext(mapping, config, analysis);
             processQueryBlock((SQLSelectQueryBlock) query, ctx);
         }
     }
@@ -76,9 +78,11 @@ public class SelectRewriteHandler extends SqlRewriteHandler {
      * @param analysis analysis result
      * @param tableMappings map of table name/alias -> TableMapping
      * @param context conversion context
+     * @param config conversion configuration
      */
     public void convertMulti(SQLStatement stmt, SqlAnalysisResult analysis,
-                             Map<String, TableMapping> tableMappings, ConversionContext context) {
+                             Map<String, TableMapping> tableMappings, 
+                             ConversionContext context, ConversionConfig config) {
         if (!(stmt instanceof SQLSelectStatement)) {
             return;
         }
@@ -87,7 +91,7 @@ public class SelectRewriteHandler extends SqlRewriteHandler {
         SQLSelectQuery query = select.getSelect().getQuery();
         
         if (query instanceof SQLSelectQueryBlock) {
-            convertQueryBlockMulti((SQLSelectQueryBlock) query, analysis, tableMappings);
+            convertQueryBlockMulti((SQLSelectQueryBlock) query, analysis, tableMappings, config);
         }
     }
     
@@ -96,14 +100,15 @@ public class SelectRewriteHandler extends SqlRewriteHandler {
      */
     private void convertQueryBlockMulti(SQLSelectQueryBlock queryBlock,
                                         SqlAnalysisResult analysis,
-                                        Map<String, TableMapping> tableMappings) {
+                                        Map<String, TableMapping> tableMappings,
+                                        ConversionConfig config) {
         ClauseContext ctx;
         if (tableMappings != null && !tableMappings.isEmpty()) {
-            // Use multi-table constructor: (analysis, mappings)
-            ctx = new ClauseContext(analysis, tableMappings);
+            // Use multi-table constructor: (analysis, config, mappings)
+            ctx = new ClauseContext(analysis, config, tableMappings);
         } else {
-            // Use single-table constructor: (mapping, analysis)
-            ctx = new ClauseContext((TableMapping) null, analysis);
+            // Use single-table constructor: (mapping, config, analysis)
+            ctx = new ClauseContext((TableMapping) null, config, analysis);
         }
         processQueryBlock(queryBlock, ctx);
     }

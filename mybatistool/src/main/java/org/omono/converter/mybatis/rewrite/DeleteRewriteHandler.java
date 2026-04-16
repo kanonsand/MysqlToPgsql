@@ -2,6 +2,7 @@ package org.omono.converter.mybatis.rewrite;
 
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlDeleteStatement;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.ClauseContext;
@@ -43,7 +44,8 @@ public class DeleteRewriteHandler extends SqlRewriteHandler {
     
     @Override
     public void convert(SQLStatement stmt, SqlAnalysisResult analysis, 
-                        TableMapping mapping, ConversionContext context) {
+                        TableMapping mapping, ConversionContext context,
+                        ConversionConfig config) {
         if (!(stmt instanceof MySqlDeleteStatement)) {
             return;
         }
@@ -51,7 +53,7 @@ public class DeleteRewriteHandler extends SqlRewriteHandler {
         MySqlDeleteStatement delete = (MySqlDeleteStatement) stmt;
         
         // Create context with all shared state
-        ClauseContext ctx = new ClauseContext(mapping, analysis);
+        ClauseContext ctx = new ClauseContext(mapping, config, analysis);
         
         // 1. Process FROM clause (table source)
         new FromClauseHandler().process(delete.getTableSource(), ctx);

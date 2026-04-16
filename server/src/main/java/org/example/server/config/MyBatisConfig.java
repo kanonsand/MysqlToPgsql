@@ -78,10 +78,10 @@ public class MyBatisConfig {
     }
     
     private ConversionConfig createConversionConfig() {
-        ConversionConfig config = new ConversionConfig();
-        config.setEnabled(conversionEnabled);
-        config.setStrictMode(strictMode);
-        config.addFunctionConverter(new DefaultFunctionConverter());
-        return config;
+        return ConversionConfig.builder()
+            .enabled(conversionEnabled)
+            .strictMode(strictMode)
+            .addFunctionConverter(new DefaultFunctionConverter())
+            .build();
     }
 }

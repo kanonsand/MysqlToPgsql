@@ -1,5 +1,8 @@
 package org.omono.converter.mybatis.clause;
 
+import com.alibaba.druid.DbType;
+import org.omono.converter.common.QuoteHelper;
+import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.SqlAnalysisResult;
 import org.omono.converter.mybatis.clause.handler.TableNameConverter;
 import org.omono.converter.schema.TableMapping;
@@ -28,22 +31,45 @@ public class ClauseContext {
     private ColumnNameConverter columnNameConverter;
     private TableNameConverter tableNameConverter;
     
+    // Configuration (contains DbType and quoting settings)
+    private final ConversionConfig config;
+    
     // Processing flags
-    private boolean quoteIdentifiers = true;
-    private boolean convertLiterals = true;
+    private final boolean quoteIdentifiers;
+    private final boolean convertLiterals;
     
     /**
-     * Create context with TableMapping.
+     * Create context with TableMapping (backward compatibility).
+     * Uses default ConversionConfig (MySQL → PostgreSQL).
      */
     public ClauseContext(TableMapping tableMapping) {
-        this(tableMapping, null);
+        this(tableMapping, ConversionConfig.mysqlToPostgres(), null);
     }
     
     /**
-     * Create context with TableMapping and analysis result.
+     * Create context with TableMapping and analysis result (backward compatibility).
+     * Uses default ConversionConfig (MySQL → PostgreSQL).
      */
     public ClauseContext(TableMapping tableMapping, SqlAnalysisResult analysisResult) {
+        this(tableMapping, ConversionConfig.mysqlToPostgres(), analysisResult);
+    }
+    
+    /**
+     * Create context with TableMapping and ConversionConfig.
+     */
+    public ClauseContext(TableMapping tableMapping, ConversionConfig config) {
+        this(tableMapping, config, null);
+    }
+    
+    /**
+     * Create context with TableMapping, ConversionConfig, and analysis result.
+     */
+    public ClauseContext(TableMapping tableMapping, ConversionConfig config, 
+                         SqlAnalysisResult analysisResult) {
         this.tableMapping = tableMapping;
+        this.config = config != null ? config : ConversionConfig.mysqlToPostgres();
+        this.quoteIdentifiers = this.config.isQuoteIdentifiers();
+        this.convertLiterals = true;
         this.tableMappings = new HashMap<>();
         this.analysisResult = analysisResult;
         this.aliasToTable = analysisResult != null ? analysisResult.getAliasToTable() : null;
@@ -54,12 +80,27 @@ public class ClauseContext {
     
     /**
      * Create context with multiple TableMappings for JOIN queries.
+     * Uses default ConversionConfig (MySQL → PostgreSQL).
      * @param analysisResult analysis result
      * @param mappings map of table name -> TableMapping
      */
     public ClauseContext(SqlAnalysisResult analysisResult, Map<String, TableMapping> mappings) {
+        this(analysisResult, ConversionConfig.mysqlToPostgres(), mappings);
+    }
+    
+    /**
+     * Create context with multiple TableMappings and ConversionConfig for JOIN queries.
+     * @param analysisResult analysis result
+     * @param config conversion configuration
+     * @param mappings map of table name -> TableMapping
+     */
+    public ClauseContext(SqlAnalysisResult analysisResult, ConversionConfig config,
+                         Map<String, TableMapping> mappings) {
         this.tableMapping = mappings != null && !mappings.isEmpty() 
             ? mappings.values().iterator().next() : null;
+        this.config = config != null ? config : ConversionConfig.mysqlToPostgres();
+        this.quoteIdentifiers = this.config.isQuoteIdentifiers();
+        this.convertLiterals = true;
         this.tableMappings = mappings != null ? new HashMap<>(mappings) : new HashMap<>();
         this.analysisResult = analysisResult;
         this.aliasToTable = analysisResult != null ? analysisResult.getAliasToTable() : null;
@@ -175,22 +216,14 @@ public class ClauseContext {
         this.tableNameConverter = converter;
     }
     
-    // Configuration getters/setters
+    // Configuration getters
     
     public boolean isQuoteIdentifiers() {
         return quoteIdentifiers;
     }
     
-    public void setQuoteIdentifiers(boolean quoteIdentifiers) {
-        this.quoteIdentifiers = quoteIdentifiers;
-    }
-    
     public boolean isConvertLiterals() {
         return convertLiterals;
-    }
-    
-    public void setConvertLiterals(boolean convertLiterals) {
-        this.convertLiterals = convertLiterals;
     }
     
     // Utility methods
@@ -293,9 +326,7 @@ public class ClauseContext {
     
     /**
      * Quote an identifier for the target database.
-     * Default implementation uses PostgreSQL style: "name"
-     * Internal double quotes are escaped by doubling them.
-     * Override this for different database styles.
+     * Uses QuoteHelper from common module for dialect-specific quoting.
      * 
      * @param name the identifier to quote (should be clean, without surrounding quotes)
      * @return the quoted identifier
@@ -304,9 +335,34 @@ public class ClauseContext {
         if (name == null || name.isEmpty()) {
             return name;
         }
-        // PostgreSQL style quoting: escape " by doubling it
-        String escaped = name.replace("\"", "\"\"");
-        return "\"" + escaped + "\"";
+        
+        if (!quoteIdentifiers || config == null) {
+            return name;
+        }
+        
+        DbType targetDbType = config.getTargetDbType();
+        return QuoteHelper.quote(name, targetDbType);
+    }
+    
+    /**
+     * Get the target database type.
+     */
+    public DbType getTargetDbType() {
+        return config != null ? config.getTargetDbType() : DbType.postgresql;
+    }
+    
+    /**
+     * Get the source database type.
+     */
+    public DbType getSourceDbType() {
+        return config != null ? config.getSourceDbType() : DbType.mysql;
+    }
+    
+    /**
+     * Get the configuration.
+     */
+    public ConversionConfig getConfig() {
+        return config;
     }
     
     /**

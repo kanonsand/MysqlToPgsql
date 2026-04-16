@@ -5,6 +5,7 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
+import org.omono.converter.common.QuoteHelper;
 import org.omono.converter.common.TypeCategory;
 import org.omono.converter.mybatis.ConversionConfig;
 import org.omono.converter.mybatis.ConversionContext;
@@ -181,7 +182,9 @@ public class SqlRewriteInterceptor implements Interceptor {
         SqlAnalysisResult result = new SqlAnalysisResult();
         
         try {
-            List<SQLStatement> statements = SQLUtils.parseStatements(sql, DbType.mysql);
+            // Use configured source database type for parsing
+            DbType sourceDbType = config.getSourceDbType();
+            List<SQLStatement> statements = SQLUtils.parseStatements(sql, sourceDbType);
             if (statements.isEmpty()) {
                 return result;
             }
@@ -221,7 +224,9 @@ public class SqlRewriteInterceptor implements Interceptor {
         
         List<SQLStatement> statements;
         try {
-            statements = SQLUtils.parseStatements(sql, DbType.mysql);
+            // Use configured source database type for parsing
+            DbType sourceDbType = config.getSourceDbType();
+            statements = SQLUtils.parseStatements(sql, sourceDbType);
         } catch (Exception e) {
             return sql;
         }
@@ -240,13 +245,13 @@ public class SqlRewriteInterceptor implements Interceptor {
         if (handler != null && handler.supports(stmt)) {
             // For SELECT statements with multiple tables, use multi-table conversion
             if (handler instanceof SelectRewriteHandler && allMappings.size() > 1) {
-                ((SelectRewriteHandler) handler).convertMulti(stmt, analysis, allMappings, context);
+                ((SelectRewriteHandler) handler).convertMulti(stmt, analysis, allMappings, context, config);
             } else {
-                handler.convert(stmt, analysis, mapping, context);
+                handler.convert(stmt, analysis, mapping, context, config);
             }
         } else {
             // Fallback: just quote identifiers
-            quoteIdentifiers(stmt, mapping);
+            quoteIdentifiers(stmt, mapping, config);
         }
         
         // Generate type categories for parameters
@@ -261,7 +266,9 @@ public class SqlRewriteInterceptor implements Interceptor {
             }
         }
         
-        return SQLUtils.toSQLString(statements, DbType.postgresql);
+        // Use configured target database type for output
+        DbType targetDbType = config.getTargetDbType();
+        return SQLUtils.toSQLString(statements, targetDbType);
     }
     
     /**
@@ -296,13 +303,17 @@ public class SqlRewriteInterceptor implements Interceptor {
     /**
      * Quote identifiers without specific handler (fallback)
      */
-    private void quoteIdentifiers(SQLStatement stmt, TableMapping mapping) {
+    private void quoteIdentifiers(SQLStatement stmt, TableMapping mapping, ConversionConfig config) {
+        DbType targetDbType = config.getTargetDbType();
+        
         stmt.accept(new MySqlASTVisitorAdapter() {
             @Override
             public boolean visit(SQLExprTableSource x) {
                 String name = x.getTableName();
-                if (name != null && !name.startsWith("\"")) {
-                    x.setExpr("\"" + cleanIdentifier(name) + "\"");
+                if (name != null && !name.startsWith("\"") && !name.startsWith("`") && !name.startsWith("[")) {
+                    // Use QuoteHelper from common module
+                    String quoted = QuoteHelper.quote(name, targetDbType);
+                    x.setExpr(quoted);
                 }
                 return true;
             }
@@ -319,8 +330,7 @@ public class SqlRewriteInterceptor implements Interceptor {
     }
     
     private String cleanIdentifier(String name) {
-        if (name == null) return null;
-        return name.replace("`", "").replace("\"", "");
+        return QuoteHelper.clean(name);
     }
     
     private int countParameters(String sql) {

@@ -2,6 +2,7 @@ package org.omono.converter.comparator.context;
 
 import com.alibaba.druid.DbType;
 import org.omono.converter.common.TypeCategory;
+import org.omono.converter.common.IdentifierQuotePair;
 
 import java.util.*;
 import java.util.function.BiPredicate;
